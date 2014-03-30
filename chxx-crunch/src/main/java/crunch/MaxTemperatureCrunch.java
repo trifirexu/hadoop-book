@@ -34,7 +34,7 @@ public class MaxTemperatureCrunch {
       .combineValues(Aggregators.MAX_INTS());
     
     pipeline.writeTextFile(maxTemps, args[1]);
-    PipelineResult result = pipeline.run();
+    PipelineResult result = pipeline.done();
     System.exit(result.succeeded() ? 0 : 1);
   }
 
