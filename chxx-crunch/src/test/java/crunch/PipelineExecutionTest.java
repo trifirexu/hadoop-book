@@ -139,53 +139,6 @@ public class PipelineExecutionTest implements Serializable {
   }
 
   @Test
-  public void testMaterializeCallsRunImplicitly() throws IOException {
-    List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
-    String inputPath = tmpDir.copyResourceFileName("set1.txt");
-
-    Pipeline pipeline = new MRPipeline(PipelineExecutionTest.class);
-    PCollection<String> lines = pipeline.readTextFile(inputPath);
-    PCollection<String> lower = lines.parallelDo(new ToLowerFn(), strings());
-
-    System.out.println("About to materialize...");
-    // the MR job is not run until we get an iterator
-    Iterable<String> materialized = lower.materialize();
-    System.out.println("About to iterate...");
-    for (String s : materialized) { // pipeline is run
-      System.out.println(s);
-    }
-    assertEquals(expectedContent, Lists.newArrayList(materialized));
-
-    System.out.println("About to call done()");
-    PipelineResult result = pipeline.done();
-    assertEquals(0, result.getStageResults().size());
-  }
-
-  @Test
-  public void testPObjectCallsRunImplicitly() throws IOException {
-    List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
-    String inputPath = tmpDir.copyResourceFileName("set1.txt");
-
-    Pipeline pipeline = new MRPipeline(PipelineExecutionTest.class);
-    PCollection<String> lines = pipeline.readTextFile(inputPath);
-    PCollection<String> lower = lines.parallelDo(new ToLowerFn(), strings());
-
-    System.out.println("About to get as a PObject of Collection...");
-    // the MR job is not run until we call getValue on the PObject
-    PObject<Collection<String>> po = lower.asCollection();
-    System.out.println("About to call getValue...");
-    for (String s : po.getValue()) { // pipeline is run
-      System.out.println(s);
-    }
-    // the MR job is run now (even though we haven't explicitly called run()
-    assertEquals(expectedContent, po.getValue());
-
-    System.out.println("About to call done()");
-    PipelineResult result = pipeline.done();
-    assertEquals(0, result.getStageResults().size());
-  }
-
-  @Test
   @Ignore
   public void testIterativeAlgorithm() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
