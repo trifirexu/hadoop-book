@@ -1,18 +1,23 @@
 package crunch;
 
+import com.google.common.collect.Lists;
 import java.io.Serializable;
+import java.util.List;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
+import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.Tuple3;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.io.To;
-import org.apache.crunch.lib.Sample;
+import org.apache.crunch.lib.Sort;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
@@ -47,12 +52,83 @@ public class TypesTest implements Serializable {
         }
       }
     }, Avros.records(WeatherRecord.class));
-    int tenth = (int) Math.ceil(records.length().getValue() / 10.0);
-    PCollection<WeatherRecord> sample = Sample.reservoirSample(records, tenth);
+
+    PTable<Pair<Integer, Integer>, WeatherRecord> table = records.by(
+        new MapFn<WeatherRecord, Pair<Integer, Integer>>() {
+      @Override
+      public Pair<Integer, Integer> map(WeatherRecord input) {
+        return Pair.of(input.getYear(), input.getTemperature());
+      }
+    }, Avros.pairs(Avros.ints(), Avros.ints()));
+
+    PCollection<WeatherRecord> sortedRecords = Sort.sort(table).values();
+
+    Iterable<WeatherRecord> materialized = sortedRecords.materialize();
+
+    List<WeatherRecord> expectedContent = Lists.newArrayList(
+        new WeatherRecord(1949, 78, "012650-99999"),
+        new WeatherRecord(1949, 111, "012650-99999"),
+        new WeatherRecord(1950, -11, "011990-99999"),
+        new WeatherRecord(1950, 0, "011990-99999"),
+        new WeatherRecord(1950, 22, "011990-99999")
+    );
+    assertEquals(expectedContent, Lists.newArrayList(materialized));
 
     pipeline.done();
+  }
 
-    assertEquals((Long) 1L, sample.length().getValue());
+  @Test
+  public void testAvroReflectSecondarySort() throws Exception {
+    String inputPath = tmpDir.copyResourceFileName("sample.txt");
+    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    PCollection<String> lines = pipeline.read(From.textFile(inputPath));
+    PCollection<WeatherRecord> records = lines.parallelDo(
+        new DoFn<String, WeatherRecord>() {
+          NcdcRecordParser parser = new NcdcRecordParser();
+          @Override
+          public void process(String input, Emitter<WeatherRecord> emitter) {
+            parser.parse(input);
+            if (parser.isValidTemperature()) {
+              emitter.emit(new WeatherRecord(parser.getYearInt(),
+                  parser.getAirTemperature(), parser.getStationId()));
+            }
+          }
+        }, Avros.records(WeatherRecord.class));
+
+    PCollection<Tuple3<Integer, Integer, WeatherRecord>> triples = records.parallelDo(
+        new DoFn<WeatherRecord, Tuple3<Integer, Integer, WeatherRecord>>() {
+          @Override
+          public void process(WeatherRecord input,
+              Emitter<Tuple3<Integer, Integer, WeatherRecord>> emitter) {
+            emitter.emit(Tuple3.of(input.getYear(), input.getTemperature(), input));
+          }
+        }, Avros.triples(Avros.ints(), Avros.ints(), Avros.records(WeatherRecord.class))
+    );
+
+    PCollection<Tuple3<Integer, Integer, WeatherRecord>> sorted = Sort
+        .sortTriples(triples, Sort.ColumnOrder.by(1, Sort.Order.ASCENDING),
+            Sort.ColumnOrder.by(2, Sort.Order.DESCENDING));
+    PCollection<WeatherRecord> sortedRecords = sorted.parallelDo(new DoFn<Tuple3<Integer,
+        Integer, WeatherRecord>, WeatherRecord>() {
+      @Override
+      public void process(Tuple3<Integer, Integer, WeatherRecord> input,
+          Emitter<WeatherRecord> emitter) {
+        emitter.emit(input.third());
+      }
+    }, Avros.records(WeatherRecord.class));
+
+    Iterable<WeatherRecord> materialized = sortedRecords.materialize();
+
+    List<WeatherRecord> expectedContent = Lists.newArrayList(
+        new WeatherRecord(1949, 111, "012650-99999"),
+        new WeatherRecord(1949, 78, "012650-99999"),
+        new WeatherRecord(1950, 22, "011990-99999"),
+        new WeatherRecord(1950, 0, "011990-99999"),
+        new WeatherRecord(1950, -11, "011990-99999")
+    );
+    assertEquals(expectedContent, Lists.newArrayList(materialized));
+
+    pipeline.done();
   }
 
   @Test(expected = CrunchRuntimeException.class)
