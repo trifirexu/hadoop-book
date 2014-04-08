@@ -14,6 +14,8 @@ public class WeatherRecord {
     this.stationId = stationId;
   }
 
+  // ... getters elided
+
   public int getYear() {
     return year;
   }

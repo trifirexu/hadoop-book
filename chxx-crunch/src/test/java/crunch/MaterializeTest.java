@@ -26,7 +26,7 @@ public class MaterializeTest {
     List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
 
-    Pipeline pipeline = new MRPipeline(MaterializeTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.readTextFile(inputPath);
     PCollection<String> lower = lines.parallelDo(new ToLowerFn(), strings());
 
@@ -45,7 +45,7 @@ public class MaterializeTest {
     List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
 
-    Pipeline pipeline = new MRPipeline(PipelineExecutionTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.readTextFile(inputPath);
     PCollection<String> lower = lines.parallelDo(new ToLowerFn(), strings());
 

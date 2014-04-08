@@ -62,7 +62,7 @@ public class ObjectReuseTest implements Serializable {
   public void test() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set2.txt");
 
-    Pipeline pipeline = new MRPipeline(ObjectReuseTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.readTextFile(inputPath);
     PTable<String, StringWrapper> table = lines.parallelDo(new DoFn<String, Pair<String,
         StringWrapper>>() {

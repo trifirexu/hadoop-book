@@ -14,7 +14,7 @@ public class PipelineDebugTest {
   @Test
   public void testDebug() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
-    Pipeline pipeline = new MRPipeline(PipelineExecutionTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     pipeline.enableDebug();
     pipeline.getConfiguration().setBoolean("crunch.log.job.progress", true);
     PCollection<String> lines = pipeline.readTextFile(inputPath);

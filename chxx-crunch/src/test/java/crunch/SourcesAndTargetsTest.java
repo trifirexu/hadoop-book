@@ -69,7 +69,7 @@ public class SourcesAndTargetsTest {
   @Ignore("fails since Crunch (incorrectly) assumes key is NullWritable")
   public void testReadValuesFromSequenceFile() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("numbers.seq");
-    Pipeline pipeline = new MRPipeline(SourcesAndTargetsTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.read(From.sequenceFile(inputPath,
         Writables.strings()));
     Iterable<String> materialized = lines.materialize();
@@ -80,7 +80,7 @@ public class SourcesAndTargetsTest {
   @Test
   public void testReadPTableFromSequenceFile() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("numbers.seq");
-    Pipeline pipeline = new MRPipeline(SourcesAndTargetsTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     TableSource<Integer, String> source =
         From.sequenceFile(inputPath, Writables.ints(), Writables.strings());
     PTable<Integer, String> table = pipeline.read(source);
@@ -92,7 +92,7 @@ public class SourcesAndTargetsTest {
   @Test
   public void testReadPTableFromSequenceFileAsWritables() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("numbers.seq");
-    Pipeline pipeline = new MRPipeline(SourcesAndTargetsTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     TableSource<IntWritable, Text> source =
         From.sequenceFile(inputPath, IntWritable.class, Text.class);
     PTable<IntWritable, Text> table = pipeline.read(source);
@@ -104,7 +104,7 @@ public class SourcesAndTargetsTest {
 //  @Test
 //  public void testReadFromAvroFile() throws IOException {
 //    String inputPath = tmpDir.copyResourceFileName("weather.avro");
-//    Pipeline pipeline = new MRPipeline(SourcesAndTargetsTest.class);
+//    Pipeline pipeline = new MRPipeline(getClass());
 //    Source<WeatherRecord> source =
 //        From.avroFile(inputPath, Avros.specifics(WeatherRecord.class));
 //    PCollection<WeatherRecord> records = pipeline.read(source);
@@ -116,7 +116,7 @@ public class SourcesAndTargetsTest {
   public void testWriteWritablesToAvroFileFails() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("ints.txt");
     String outputPath = tmpDir.getFileName("out");
-    Pipeline pipeline = new MRPipeline(SourcesAndTargetsTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.read(From.textFile(inputPath));
     lines.write(To.avroFile(outputPath));
     pipeline.done();

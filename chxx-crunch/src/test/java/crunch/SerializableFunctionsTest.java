@@ -19,7 +19,7 @@ public class SerializableFunctionsTest {
   @Test
   public void testInitialize() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
-    Pipeline pipeline = new MRPipeline(SerializableFunctionsTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.readTextFile(inputPath);
     long len = lines.parallelDo(new CustomDoFn<String, String>(), strings())
         .length().getValue();

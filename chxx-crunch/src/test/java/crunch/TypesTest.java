@@ -38,7 +38,7 @@ public class TypesTest implements Serializable {
   @Test
   public void testAvroReflect() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("sample.txt");
-    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.read(From.textFile(inputPath));
     PCollection<WeatherRecord> records = lines.parallelDo(
         new DoFn<String, WeatherRecord>() {
@@ -80,7 +80,7 @@ public class TypesTest implements Serializable {
   @Test
   public void testAvroReflectSecondarySort() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("sample.txt");
-    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.read(From.textFile(inputPath));
     PCollection<WeatherRecord> records = lines.parallelDo(
         new DoFn<String, WeatherRecord>() {
@@ -135,7 +135,7 @@ public class TypesTest implements Serializable {
   public void testWriteWritableToAvroFileFails() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("ints.txt");
     String outputPath = tmpDir.getFileName("out");
-    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> a = pipeline.read(From.textFile(inputPath));
     a.write(To.avroFile(outputPath)); // fails with cannot serialize PType of class: class org.apache.crunch.types.writable.WritableType
     pipeline.done();
@@ -145,7 +145,7 @@ public class TypesTest implements Serializable {
   public void testWriteAvroToSequenceFileFails() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("ints.txt");
     String outputPath = tmpDir.getFileName("out");
-    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> a = pipeline.read(From.textFile(inputPath, Avros.strings()));
     a.write(To.sequenceFile(outputPath)); // fails with Could not find a serializer for the Key class: 'org.apache.avro.mapred.AvroKey'.
     PipelineResult result = pipeline.done();
@@ -156,7 +156,7 @@ public class TypesTest implements Serializable {
   public void testConvertWritableToAvro() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("ints.txt");
     String outputPath = tmpDir.getFileName("out");
-    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> a = pipeline.read(From.textFile(inputPath));
     PCollection<String> b = a.parallelDo(IdentityFn.<String>getInstance(), Avros.strings());
     b.write(To.avroFile(outputPath));
@@ -166,7 +166,7 @@ public class TypesTest implements Serializable {
   @Test
   public void testWriteTextToSequenceFile() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("ints.txt");
-    Pipeline pipeline = new MRPipeline(TypesTest.class);
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.read(From.textFile(inputPath));
     assertEquals(WritableTypeFamily.getInstance(), lines.getPType().getFamily());
 
@@ -174,7 +174,7 @@ public class TypesTest implements Serializable {
     lines.write(To.sequenceFile(outputPath));
     pipeline.done();
 
-    Pipeline pipeline2 = new MRPipeline(TypesTest.class);
+    Pipeline pipeline2 = new MRPipeline(getClass());
     PTable<NullWritable, Text> d = pipeline2.read(From.sequenceFile(outputPath,
         NullWritable.class, Text.class));
     PCollection<Text> e = d.values();
