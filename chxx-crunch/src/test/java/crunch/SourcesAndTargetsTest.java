@@ -2,6 +2,7 @@ package crunch;
 
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import org.apache.crunch.CrunchRuntimeException;
@@ -27,7 +28,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class SourcesAndTargetsTest {
+public class SourcesAndTargetsTest implements Serializable {
 
   @Rule
   public transient TemporaryPath tmpDir = new TemporaryPath();
@@ -123,9 +124,22 @@ public class SourcesAndTargetsTest {
   }
 
   @Test
+  public void testWritePTableToAvroFileInMem() throws IOException {
+    PCollection<String> lines = MemPipeline.typedCollectionOf(Avros.strings(), "2", "3", "1", "3");
+    PTable<Integer, String> table = lines.by(new MapFn<String, Integer>() {
+      @Override
+      public Integer map(String input) {
+        return input.length();
+      }
+    }, Avros.ints());
+    table.write(To.avroFile("/tmp/out"), Target.WriteMode.OVERWRITE);
+    lines.getPipeline().done();
+  }
+
+  @Test
   public void testWritePTableToAvroFile() throws IOException {
     String inputPath = tmpDir.copyResourceFileName("ints.txt");
-    Pipeline pipeline = MemPipeline.getInstance();
+    Pipeline pipeline = new MRPipeline(getClass());
     PCollection<String> lines = pipeline.read(From.textFile(inputPath, Avros.strings()));
     PTable<Integer, String> table = lines.by(new MapFn<String, Integer>() {
       @Override
@@ -133,7 +147,7 @@ public class SourcesAndTargetsTest {
         return input.length();
       }
     }, Avros.ints());
-    table.write(To.textFile("/tmp/out"), Target.WriteMode.OVERWRITE);
+    table.write(To.avroFile("/tmp/out2"), Target.WriteMode.OVERWRITE);
     pipeline.done();
   }
 
